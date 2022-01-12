@@ -53,7 +53,7 @@ func (b *AMQPCeleryBackend) GetResult(taskID string) (*ResultMessage, error) {
 	_, err := b.QueueDeclare(
 		queueName, // name
 		true,      // durable
-		true,      // autoDelete
+		false,     // autoDelete
 		false,     // exclusive
 		false,     // noWait
 		args,      // args
@@ -66,7 +66,7 @@ func (b *AMQPCeleryBackend) GetResult(taskID string) (*ResultMessage, error) {
 		"default",
 		"direct",
 		true,
-		true,
+		false,
 		false,
 		false,
 		nil,
@@ -106,7 +106,7 @@ func (b *AMQPCeleryBackend) SetResult(taskID string, result *ResultMessage) erro
 	_, err := b.QueueDeclare(
 		queueName, // name
 		true,      // durable
-		true,      // autoDelete
+		false,     // autoDelete
 		false,     // exclusive
 		false,     // noWait
 		args,      // args
@@ -119,7 +119,7 @@ func (b *AMQPCeleryBackend) SetResult(taskID string, result *ResultMessage) erro
 		"default",
 		"direct",
 		true,
-		true,
+		false,
 		false,
 		false,
 		nil,

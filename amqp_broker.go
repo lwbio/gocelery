@@ -26,7 +26,7 @@ func NewAMQPExchange(name string) *AMQPExchange {
 		Name:       name,
 		Type:       "direct",
 		Durable:    true,
-		AutoDelete: true,
+		AutoDelete: false,
 	}
 }
 
