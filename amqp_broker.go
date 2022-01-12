@@ -109,33 +109,13 @@ func (b *AMQPCeleryBroker) StartConsumingChannel() error {
 	return nil
 }
 
+func (b *AMQPCeleryBroker) SetQueueName(QueueName string) {
+	b.Queue.Name = QueueName
+}
+
 // SendCeleryMessage sends CeleryMessage to broker
 func (b *AMQPCeleryBroker) SendCeleryMessage(message *CeleryMessage) error {
 	taskMessage := message.GetTaskMessage()
-	queueName := "celery"
-	_, err := b.QueueDeclare(
-		queueName, // name
-		true,      // durable
-		false,     // autoDelete
-		false,     // exclusive
-		false,     // noWait
-		nil,       // args
-	)
-	if err != nil {
-		return err
-	}
-	err = b.ExchangeDeclare(
-		"default",
-		"direct",
-		true,
-		true,
-		false,
-		false,
-		nil,
-	)
-	if err != nil {
-		return err
-	}
 
 	resBytes, err := json.Marshal(taskMessage)
 	if err != nil {
@@ -151,7 +131,7 @@ func (b *AMQPCeleryBroker) SendCeleryMessage(message *CeleryMessage) error {
 
 	return b.Publish(
 		"",
-		queueName,
+		b.Queue.Name,
 		false,
 		false,
 		publishMessage,

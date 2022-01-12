@@ -7,6 +7,7 @@ package gocelery
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -19,6 +20,7 @@ type CeleryClient struct {
 
 // CeleryBroker is interface for celery broker database
 type CeleryBroker interface {
+	SetQueueName(queueName string)
 	SendCeleryMessage(*CeleryMessage) error
 	GetTaskMessage() (*TaskMessage, error) // must be non-blocking
 }
@@ -29,6 +31,25 @@ type CeleryBackend interface {
 	SetResult(taskID string, result *ResultMessage) error
 }
 
+// 根据uri自动选择broker
+func NewCeleryClientUri(uri string, backend CeleryBackend, numWorkers int) (*CeleryClient, error) {
+	var broker CeleryBroker
+
+	if strings.HasPrefix(uri, "redis://") {
+		broker = NewRedisBroker(NewRedisPool(uri))
+	} else if strings.HasPrefix(uri, "amqp://") {
+		broker = NewAMQPCeleryBroker(uri)
+	} else {
+		return nil, fmt.Errorf("unknown uri: %s", uri)
+	}
+	return &CeleryClient{
+		broker,
+		backend,
+		NewCeleryWorker(broker, backend, numWorkers),
+	}, nil
+
+}
+
 // NewCeleryClient creates new celery client
 func NewCeleryClient(broker CeleryBroker, backend CeleryBackend, numWorkers int) (*CeleryClient, error) {
 	return &CeleryClient{
@@ -36,6 +57,11 @@ func NewCeleryClient(broker CeleryBroker, backend CeleryBackend, numWorkers int)
 		backend,
 		NewCeleryWorker(broker, backend, numWorkers),
 	}, nil
+}
+
+// 设置队列名
+func (cc *CeleryClient) SetQueueName(queueName string) {
+	cc.broker.SetQueueName(queueName)
 }
 
 // Register task

@@ -5,61 +5,48 @@
 package main
 
 import (
-	"log"
-	"math/rand"
-	"reflect"
-	"time"
-
-	"github.com/gocelery/gocelery"
-	"github.com/gomodule/redigo/redis"
+	"github.com/lwbio/gocelery"
 )
 
 // Run Celery Worker First!
 // celery -A worker worker --loglevel=debug --without-heartbeat --without-mingle
 func main() {
+	var err error
 
-	// create redis connection pool
-	redisPool := &redis.Pool{
-		MaxIdle:     3,                 // maximum number of idle connections in the pool
-		MaxActive:   0,                 // maximum number of connections allocated by the pool at a given time
-		IdleTimeout: 240 * time.Second, // close connections after remaining idle for this duration
-		Dial: func() (redis.Conn, error) {
-			c, err := redis.DialURL("redis://")
-			if err != nil {
-				return nil, err
-			}
-			return c, err
-		},
-		TestOnBorrow: func(c redis.Conn, t time.Time) error {
-			_, err := c.Do("PING")
-			return err
-		},
-	}
+	// redisPool := &redis.Pool{
+	// 	MaxIdle:     3,                 // maximum number of idle connections in the pool
+	// 	MaxActive:   0,                 // maximum number of connections allocated by the pool at a given time
+	// 	IdleTimeout: 240 * time.Second, // close connections after remaining idle for this duration
+	// 	Dial: func() (redis.Conn, error) {
+	// 		c, err := redis.DialURL("redis://:temp12138@127.0.0.1:6379/8")
+	// 		if err != nil {
+	// 			return nil, err
+	// 		}
+	// 		return c, err
+	// 	},
+	// 	TestOnBorrow: func(c redis.Conn, t time.Time) error {
+	// 		_, err := c.Do("PING")
+	// 		return err
+	// 	},
+	// }
 
 	// initialize celery client
-	cli, _ := gocelery.NewCeleryClient(
-		gocelery.NewRedisBroker(redisPool),
-		&gocelery.RedisCeleryBackend{Pool: redisPool},
-		1,
-	)
 
-	// prepare arguments
-	taskName := "worker.add"
-	argA := rand.Intn(10)
-	argB := rand.Intn(10)
+	celery, err := gocelery.NewCeleryClientUri("redis://:temp12138@127.0.0.1:6379/8", nil, 1)
+	if err != nil {
+		panic(err)
+	}
+
+	celery.SetQueueName("tasks.qiye")
 
 	// run task
-	asyncResult, err := cli.Delay(taskName, argA, argB)
+	// taskName := "qiye.tasks.notify_attraction_activity_create"
+	taskName := "qiye.tasks.notify_attraction_activity_create"
+	storeId := 199
+	activityId := 40
+	_, err = celery.Delay(taskName, storeId, activityId)
 	if err != nil {
 		panic(err)
 	}
-
-	// get results from backend with timeout
-	res, err := asyncResult.Get(10 * time.Second)
-	if err != nil {
-		panic(err)
-	}
-
-	log.Printf("result: %+v of type %+v", res, reflect.TypeOf(res))
 
 }
