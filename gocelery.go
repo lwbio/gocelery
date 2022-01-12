@@ -8,11 +8,13 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 )
 
 // CeleryClient provides API for sending celery tasks
 type CeleryClient struct {
+	sync.Mutex
 	broker  CeleryBroker
 	backend CeleryBackend
 	worker  *CeleryWorker
@@ -43,9 +45,9 @@ func NewCeleryClientUri(uri string, backend CeleryBackend, numWorkers int) (*Cel
 		return nil, fmt.Errorf("unknown uri: %s", uri)
 	}
 	return &CeleryClient{
-		broker,
-		backend,
-		NewCeleryWorker(broker, backend, numWorkers),
+		broker:  broker,
+		backend: backend,
+		worker:  NewCeleryWorker(broker, backend, numWorkers),
 	}, nil
 
 }
@@ -53,9 +55,9 @@ func NewCeleryClientUri(uri string, backend CeleryBackend, numWorkers int) (*Cel
 // NewCeleryClient creates new celery client
 func NewCeleryClient(broker CeleryBroker, backend CeleryBackend, numWorkers int) (*CeleryClient, error) {
 	return &CeleryClient{
-		broker,
-		backend,
-		NewCeleryWorker(broker, backend, numWorkers),
+		broker:  broker,
+		backend: backend,
+		worker:  NewCeleryWorker(broker, backend, numWorkers),
 	}, nil
 }
 

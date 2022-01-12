@@ -37,10 +37,11 @@ func main() {
 		panic(err)
 	}
 
-	celery.SetQueueName("tasks.qiye")
+	celery.Lock()
+	defer celery.Unlock()
 
 	// run task
-	// taskName := "qiye.tasks.notify_attraction_activity_create"
+	celery.SetQueueName("tasks.qiye")
 	taskName := "qiye.tasks.notify_attraction_activity_create"
 	storeId := 199
 	activityId := 40
